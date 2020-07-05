@@ -34,7 +34,7 @@ void menuView()
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(4, 4);
-  display.println("timelapser v 1.0");
+  display.println("TimeLapser v 1.1");
   display.drawLine(0, 15, display.width() - 1, 15, WHITE);
 
   display.setTextSize(2);
@@ -56,6 +56,25 @@ void menuView()
   display.setTextSize(1);
   display.setCursor(0, 55);
   display.println("Push encoder to start");
+
+  display.display();
+}
+
+void menuViewUpdate()
+{
+  display.setTextSize(2);
+  display.fillRect(47, 35, 35, 15, 0);
+  if (timer_seconds < 10)
+  {
+    display.setCursor(55, 35);
+  }
+  else
+  {
+    display.setCursor(47, 35);
+  }
+
+  display.print(timer_seconds);
+  display.print("s");
 
   display.display();
 }
@@ -105,7 +124,7 @@ void workingView()
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(4, 4);
-  display.print("taked ");
+  display.print("Taked ");
   display.print(taked);
   display.print(" photos");
   display.drawLine(0, 15, display.width() - 1, 15, WHITE);
@@ -113,7 +132,7 @@ void workingView()
   display.setCursor(4, 16);
 
   display.setTextColor(WHITE);
-  display.println("next photo in:");
+  display.println("Next photo in:");
   display.setTextSize(2);
   display.setCursor(4, 32);
   display.print(coolDown);
@@ -123,20 +142,27 @@ void workingView()
   display.println("Push encoder to stop");
 
   display.display();
+}
 
+void displayBlink()
+{
+      display.clearDisplay();
+      display.fillRect(0, 0, display.width() - 1, display.height() - 1, WHITE);
+      display.display();
+      display.clearDisplay();
 }
 
 void setup()
 {
   pinMode(13, OUTPUT);  
-  enc1.setType(TYPE1);                       
-  enc1.setFastTimeout(40);                  
+  enc1.setType(TYPE1);
+  enc1.setFastTimeout(50);
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // initialize with the I2C addr 0x3C (for the 128x64 oled from aliexpress!)
   display.clearDisplay();
 
   menuView();
-  display.display();
 }
+
 void loop()
 {
   pinTick();
@@ -146,15 +172,26 @@ void loop()
   {
     if (enc1.isRight())
       timer_seconds++;
-    if (timer_seconds > 1 && enc1.isLeft())
+    if (enc1.isLeft() && timer_seconds > 1)
       timer_seconds--;
 
-    if (enc1.isTurn())
+    if(enc1.isFastR())
+    timer_seconds+=3;
+    if (enc1.isFastL() && timer_seconds > 5)
+      timer_seconds-=3;
+
+    if (enc1.isTurn()) //when encoder rotated
     {
-      menuView();
+      menuViewUpdate();
     }
+
     if(enc1.isPress())
     {
+      //instant photo
+      digitalWrite(13, HIGH); 
+      displayBlink();
+      digitalWrite(13, LOW);
+
       taked = 0;
       startWorking(); 
       workingView();
@@ -164,6 +201,10 @@ void loop()
   {
     vorkingTick();
     workingView();
-    if(enc1.isPress()){started = 0; menuView();}
+    if(enc1.isPress())
+    {
+      started = 0;
+      menuView();
+    }
   }
 }
